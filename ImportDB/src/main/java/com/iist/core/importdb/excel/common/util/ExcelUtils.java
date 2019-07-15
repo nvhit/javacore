@@ -1,17 +1,25 @@
 package com.iist.core.importdb.excel.common.util;
 
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.hssf.usermodel.HSSFDataValidationHelper;
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
@@ -29,6 +37,8 @@ import org.apache.poi.xssf.usermodel.XSSFDataValidationHelper;
 import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import net.sf.json.JSONObject;
 
 
 
@@ -444,7 +454,155 @@ public class ExcelUtils {
 				e.printStackTrace();
 			}
 		return cells;
+	}
+
+	public static List<List<String>> creteJSONAndTextFileFromExcel(String excelFilePath, int beginRow ) {
+		List<List<String>> sheetDataTable = new ArrayList<List<String>>();
+		 try {
+			 Workbook excelWorkBook = getWorkbook(excelFilePath);
+			// Get all excel sheet count.
+			int totalSheetNumber = excelWorkBook.getNumberOfSheets();
+			for (int i = 0; i < totalSheetNumber; i++) {
+				// Get current sheet.
+				Sheet sheet = excelWorkBook.getSheetAt(i);
+
+				// Get sheet name.
+				String sheetName = sheet.getSheetName();
+				if(sheetName != null && sheetName.length() > 0) {
+					sheetDataTable = getSheetDataList(sheet, beginRow);
+					// Generate JSON format of above sheet data and write to a JSON file.
+					String jsonString = getJSONStringFromList(sheetDataTable, beginRow);
+					String jsonFileName = sheet.getSheetName() + ".json";
+					writeStringToFile(jsonString, jsonFileName);
+				}
+			}
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		 return sheetDataTable;
+	}
+
+	private static void writeStringToFile (String data, String fileName) {
+		try {
+			// Get current executing class working directory.
+			String currentWorkingFolder = System.getProperty("user.dir");
+
+			// Get file path separator.
+			String filePathSeperator = System.getProperty("file.separator");
+
+			// Get the output file absolute path.
+			String filePath = currentWorkingFolder + filePathSeperator + fileName;
+
+			// Create File, FileWriter and BufferedWriter object.
+			File file = new File(filePath);
+
+			FileWriter fw = new FileWriter(file);
+
+			BufferedWriter buffWriter = new BufferedWriter(fw);
+
+			// Write string data to the output file, flush and close the buffered writer object.
+			buffWriter.write(data);
+
+			buffWriter.flush();
+
+			buffWriter.close();
+
+			System.out.println(filePath + " has been created.");
+
+		}catch (IOException ex) {
+			System.err.println(ex.getMessage());
+		}
+	}
+
+	private static String getJSONStringFromList(List<List<String>> dataTable, int beginRow) {
+		String ret = "";
+		if (dataTable != null) {
+			int rowCount = dataTable.size();
+			if (rowCount > 1) {
+				//Create a JSONObject to store table data.
+				JSONObject tableJsonObject = new JSONObject();
+				// The first row is the header row, store each column name.
+				List<String> headerRow = dataTable.get(0);
+				int columnCount = headerRow.size();
+				// Loop in the row data list.
+				for (int i=1; i<rowCount; i++) {
+					// Get current row data.
+					List<String> dataRow = dataTable.get(i);
+
+					// Create a JSONObject object to store row data.
+					JSONObject rowJsonObject = new JSONObject();
+
+					for (int j= beginRow; j< columnCount; j++) {
+						String columnName = headerRow.get(j);
+						String columnValue = dataRow.get(j);
+
+						rowJsonObject.put(columnName, columnValue);
+					}
+
+					tableJsonObject.put("Row " + i, rowJsonObject);
+				}
+				// Return string format data of JSONObject object.
+				ret = tableJsonObject.toString();
+			}
+		}
+		return ret;
 		
+	}
+
+	private static List<List<String>> getSheetDataList(Sheet sheet, int beginRow) {
+		List<List<String>> ret = new ArrayList<List<String>>();
+		//int firstRowNum = sheet.getFirstRowNum();
+		int lastRowNum = sheet.getLastRowNum();
+		if(lastRowNum > 0) {
+			for(int i=beginRow; i<lastRowNum + 1; i++) {
+				// Get current row object.
+				Row row = sheet.getRow(i);
+				// Get first and last cell number.
+				int firstCellNum = row.getFirstCellNum();
+				int lastCellNum = row.getLastCellNum();
+
+				// Create a String list to save column data in a row.
+				List<String> rowDataList = new ArrayList<String>();
+
+				// Loop in the row cells.
+				for (int j = firstCellNum+1; j < lastCellNum; j++) {
+					// Get current cell.
+					Cell cell = row.getCell(j);
+
+					// Get cell type.
+					CellType cellType = cell.getCellType();
+
+					if (cellType == CellType.NUMERIC) {
+						if (HSSFDateUtil.isCellDateFormatted(cell)) {
+							String stringCellValue = cell.toString();
+							rowDataList.add(stringCellValue);
+						} else {
+							double numberValue = cell.getNumericCellValue();
+							String stringCellValue = BigDecimal.valueOf(numberValue).toPlainString();
+							rowDataList.add(stringCellValue);
+						}
+						
+
+					} else if (cellType == CellType.STRING) {
+						String cellValue = cell.getStringCellValue();
+						rowDataList.add(cellValue);
+					} else if (cellType == CellType.BOOLEAN) {
+						boolean numberValue = cell.getBooleanCellValue();
+						String stringCellValue = String.valueOf(numberValue);
+
+						rowDataList.add(stringCellValue);
+
+					}else if (cellType == CellType.BLANK) {
+						rowDataList.add("");
+					}
+				}
+				ret.add(rowDataList);
+			}
+		}
+		return ret;
 	}
 
 }
