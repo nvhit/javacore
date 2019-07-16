@@ -6,6 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,12 +41,12 @@ import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.iist.core.importdb.arr.common.annotation.Column;
+import com.iist.core.importdb.arr.common.annotation.Model;
+import com.iist.core.importdb.arr.common.annotation.Table;
+import com.iist.core.importdb.excel.common.constants.StringPool;
+
 import net.sf.json.JSONObject;
-
-
-
-
-
 
 /**
  * 
@@ -53,7 +56,7 @@ import net.sf.json.JSONObject;
 public class ExcelUtils {
 	private static final char[] EXCEL_SHEET_NAME_INVALID_CHARS = { '/', '\\', '?', '*', ']', '[', ':' };
 	private static final char INVALID_REPLACE_CHAR = '_';
-
+	
 
 	public static String getStringCellValue(Row row, int colIndex) {
 		String result = null;
@@ -456,7 +459,12 @@ public class ExcelUtils {
 		return cells;
 	}
 
-	public static List<List<String>> creteJSONAndTextFileFromExcel(String excelFilePath, int beginRow ) {
+	/**
+	 *  create json file from excel
+	 * @param excelFilePath
+	 * @return sheetDataTable
+	 */
+	public static List<List<String>> creteJSONFileFromExcel(String excelFilePath) {
 		List<List<String>> sheetDataTable = new ArrayList<List<String>>();
 		 try {
 			 Workbook excelWorkBook = getWorkbook(excelFilePath);
@@ -469,10 +477,11 @@ public class ExcelUtils {
 				// Get sheet name.
 				String sheetName = sheet.getSheetName();
 				if(sheetName != null && sheetName.length() > 0) {
-					sheetDataTable = getSheetDataList(sheet, beginRow);
+					sheetDataTable = getSheetDataList(sheet);
 					// Generate JSON format of above sheet data and write to a JSON file.
-					String jsonString = getJSONStringFromList(sheetDataTable, beginRow);
-					String jsonFileName = sheet.getSheetName() + ".json";
+					String jsonString = getJSONStringFromList(sheetDataTable);
+
+					String jsonFileName = sheet.getSheetName() + StringPool.PERIOD+"json";
 					writeStringToFile(jsonString, jsonFileName);
 				}
 			}
@@ -485,16 +494,21 @@ public class ExcelUtils {
 		 return sheetDataTable;
 	}
 
-	private static void writeStringToFile (String data, String fileName) {
+	/**
+	 * write string to file 
+	 * @param data
+	 * @param fileName
+	 */
+	public static void writeStringToFile (String data, String fileName) {
 		try {
 			// Get current executing class working directory.
-			String currentWorkingFolder = System.getProperty("user.dir");
+			String currentWorkingFolder = System.getProperty("user"+StringPool.PERIOD+"dir");
 
 			// Get file path separator.
-			String filePathSeperator = System.getProperty("file.separator");
+			String filePathSeperator = System.getProperty("file"+StringPool.PERIOD+"separator");
 
 			// Get the output file absolute path.
-			String filePath = currentWorkingFolder + filePathSeperator + fileName;
+			String filePath = currentWorkingFolder + filePathSeperator +"src"+StringPool.BACK_SLASH+"main"+StringPool.BACK_SLASH+"output"+StringPool.BACK_SLASH + fileName;
 
 			// Create File, FileWriter and BufferedWriter object.
 			File file = new File(filePath);
@@ -517,47 +531,106 @@ public class ExcelUtils {
 		}
 	}
 
-	private static String getJSONStringFromList(List<List<String>> dataTable, int beginRow) {
-		String ret = "";
+	/**
+	 * get JSON from list
+	 * @param dataTable
+	 * @return String
+	 * <p><p/>
+	 */
+	public static String getJSONStringFromList(List<List<String>> dataTable) {
+		String ret = StringPool.BLANK;
 		if (dataTable != null) {
 			int rowCount = dataTable.size();
 			if (rowCount > 1) {
 				//Create a JSONObject to store table data.
 				JSONObject tableJsonObject = new JSONObject();
 				// The first row is the header row, store each column name.
-				List<String> headerRow = dataTable.get(0);
-				int columnCount = headerRow.size();
+				String titleRaw = dataTable.get(0).get(0);
+				StringBuilder title = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(titleRaw);
+				List<String> headerRowsRaw = dataTable.get(2);
+				// The child header row
+				List<String> childHeaderRowsRaw = dataTable.get(3);
+
+				
+				List<String> headerRows = new ArrayList<String>();
+				for (String headerRowRaw : headerRowsRaw) {
+					StringBuilder headerRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(headerRowRaw);
+					headerRows.add(headerRow.toString());
+				}
+
+				List<String> childHeaderRows = new ArrayList<String>();
+				for (String childHeaderRowRaw : childHeaderRowsRaw) {
+					StringBuilder childHeaderRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(childHeaderRowRaw);
+					childHeaderRows.add(childHeaderRow.toString());
+				}
+
 				// Loop in the row data list.
-				for (int i=1; i<rowCount; i++) {
-					// Get current row data.
-					List<String> dataRow = dataTable.get(i);
-
+				for (int i= 5; i< rowCount; i++) {
 					// Create a JSONObject object to store row data.
+					
+					JSONObject rowJsonObjectChild = new JSONObject();
 					JSONObject rowJsonObject = new JSONObject();
-
-					for (int j= beginRow; j< columnCount; j++) {
-						String columnName = headerRow.get(j);
+					String nodeName = StringPool.BLANK;
+					List<String> dataRow = dataTable.get(i);
+					
+					for (int j= 0; j < headerRows.size(); j++) {
+						
+						String columnKey = headerRows.get(j);
 						String columnValue = dataRow.get(j);
 
-						rowJsonObject.put(columnName, columnValue);
+						String columnObjectKey = childHeaderRows.get(j);
+						String columnObjectValue = dataRow.get(j);
+						if (!columnKey.equals(StringPool.BLANK)) {
+							rowJsonObject.clear();
+							nodeName = headerRows.get(j);
+							rowJsonObjectChild.put(columnKey, columnValue);
+						}
+
+						if(!childHeaderRows.get(j).equals(StringPool.BLANK)){
+							
+							rowJsonObject.put(columnObjectKey, columnObjectValue);
+							rowJsonObjectChild.put(nodeName, rowJsonObject);
+						}
 					}
 
-					tableJsonObject.put("Row " + i, rowJsonObject);
+					tableJsonObject.put(title + " row "+i , rowJsonObjectChild);
 				}
-				// Return string format data of JSONObject object.
 				ret = tableJsonObject.toString();
 			}
 		}
 		return ret;
+	}
+
+	public static int getJSONStringFromList( Class<?> annotationObject) {
+		int b = 0;
+		try {
+			int a= annotationObject.getMethod("getIndexHeader").getModifiers();
+			System.out.println(a);
+			 //b = Integer.valueOf(a);
+			
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return b;
 		
 	}
 
-	private static List<List<String>> getSheetDataList(Sheet sheet, int beginRow) {
+
+	/**
+	 *  get data to sheet from list nest list
+	 * @param sheet
+	 * @return ret
+	 */
+	public static List<List<String>> getSheetDataList(Sheet sheet) {
 		List<List<String>> ret = new ArrayList<List<String>>();
-		//int firstRowNum = sheet.getFirstRowNum();
+		int firstRowNum = sheet.getFirstRowNum();
 		int lastRowNum = sheet.getLastRowNum();
 		if(lastRowNum > 0) {
-			for(int i=beginRow; i<lastRowNum + 1; i++) {
+			for(int i= firstRowNum; i< lastRowNum + 1; i++) {
 				// Get current row object.
 				Row row = sheet.getRow(i);
 				// Get first and last cell number.
@@ -568,7 +641,7 @@ public class ExcelUtils {
 				List<String> rowDataList = new ArrayList<String>();
 
 				// Loop in the row cells.
-				for (int j = firstCellNum+1; j < lastCellNum; j++) {
+				for (int j = firstCellNum; j < lastCellNum; j++) {
 					// Get current cell.
 					Cell cell = row.getCell(j);
 
@@ -584,7 +657,6 @@ public class ExcelUtils {
 							String stringCellValue = BigDecimal.valueOf(numberValue).toPlainString();
 							rowDataList.add(stringCellValue);
 						}
-						
 
 					} else if (cellType == CellType.STRING) {
 						String cellValue = cell.getStringCellValue();
@@ -595,8 +667,8 @@ public class ExcelUtils {
 
 						rowDataList.add(stringCellValue);
 
-					}else if (cellType == CellType.BLANK) {
-						rowDataList.add("");
+					} else if (cellType == CellType.BLANK) {
+						rowDataList.add(StringPool.BLANK);
 					}
 				}
 				ret.add(rowDataList);
@@ -604,5 +676,4 @@ public class ExcelUtils {
 		}
 		return ret;
 	}
-
 }

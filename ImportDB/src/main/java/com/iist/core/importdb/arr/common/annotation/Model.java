@@ -1,7 +1,16 @@
 package com.iist.core.importdb.arr.common.annotation;
 
 public abstract class Model {
-	@Header( indexHeader =0)
-	public int indexHeader =0;
+	@Header( indexHeader = 2)
+	public int indexHeader = 2;
+
+	public int getIndexHeader() {
+		return indexHeader;
+	}
+
+	public void setIndexHeader(int indexHeader) {
+		this.indexHeader = indexHeader;
+	}
+	
 
 }

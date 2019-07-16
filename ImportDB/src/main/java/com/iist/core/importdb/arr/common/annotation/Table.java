@@ -16,4 +16,7 @@ public @interface Table {
 	public static final String ID_NAME = "id";
 	public String id() default ID_NAME;
 	public String name();
+	@Header( indexHeader = 2)
+	public int indexHeader = 2;
+	
 }
