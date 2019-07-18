@@ -6,9 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,9 +38,7 @@ import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import com.iist.core.importdb.arr.common.annotation.Column;
-import com.iist.core.importdb.arr.common.annotation.Model;
-import com.iist.core.importdb.arr.common.annotation.Table;
+
 import com.iist.core.importdb.excel.common.constants.StringPool;
 
 import net.sf.json.JSONObject;
@@ -464,7 +459,7 @@ public class ExcelUtils {
 	 * @param excelFilePath
 	 * @return sheetDataTable
 	 */
-	public static List<List<String>> creteJSONFileFromExcel(String excelFilePath) {
+	public static List<List<String>> creteJSONFileFromExcel(String excelFilePath, Object obj) {
 		List<List<String>> sheetDataTable = new ArrayList<List<String>>();
 		 try {
 			 Workbook excelWorkBook = getWorkbook(excelFilePath);
@@ -479,7 +474,7 @@ public class ExcelUtils {
 				if(sheetName != null && sheetName.length() > 0) {
 					sheetDataTable = getSheetDataList(sheet);
 					// Generate JSON format of above sheet data and write to a JSON file.
-					String jsonString = getJSONStringFromList(sheetDataTable);
+					String jsonString = getJSONStringFromList(sheetDataTable,obj);
 
 					String jsonFileName = sheet.getSheetName() + StringPool.PERIOD+"json";
 					writeStringToFile(jsonString, jsonFileName);
@@ -501,14 +496,9 @@ public class ExcelUtils {
 	 */
 	public static void writeStringToFile (String data, String fileName) {
 		try {
-			// Get current executing class working directory.
-			String currentWorkingFolder = System.getProperty("user"+StringPool.PERIOD+"dir");
-
-			// Get file path separator.
-			String filePathSeperator = System.getProperty("file"+StringPool.PERIOD+"separator");
 
 			// Get the output file absolute path.
-			String filePath = currentWorkingFolder + filePathSeperator +"src"+StringPool.BACK_SLASH+"main"+StringPool.BACK_SLASH+"output"+StringPool.BACK_SLASH + fileName;
+			String filePath = com.iist.core.importdb.excel.common.util.StringUtils.getPathOutput()+fileName;
 
 			// Create File, FileWriter and BufferedWriter object.
 			File file = new File(filePath);
@@ -601,24 +591,6 @@ public class ExcelUtils {
 		return ret;
 	}
 
-	public static int getJSONStringFromList( Class<?> annotationObject) {
-		int b = 0;
-		try {
-			int a= annotationObject.getMethod("getIndexHeader").getModifiers();
-			System.out.println(a);
-			 //b = Integer.valueOf(a);
-			
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		return b;
-		
-	}
-
 
 	/**
 	 *  get data to sheet from list nest list
@@ -676,4 +648,75 @@ public class ExcelUtils {
 		}
 		return ret;
 	}
+
+
+	public static String getJSONStringFromList(List<List<String>> dataTable, Object classObj) {
+		String ret = StringPool.BLANK;
+		if (dataTable != null) {
+			int rowCount = dataTable.size();
+			if (rowCount > 1) {
+				//Create a JSONObject to store table data.
+				JSONObject tableJsonObject = new JSONObject();
+				// The first row is the header row, store each column name.
+				String titleRaw = dataTable.get(0).get(0);
+				StringBuilder title = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(titleRaw);
+				List<String> headerRowsRaw = dataTable.get(2);
+				// The child header row
+				List<String> childHeaderRowsRaw = dataTable.get(3);
+
+				
+				List<String> headerRows = new ArrayList<String>();
+				for (String headerRowRaw : headerRowsRaw) {
+					StringBuilder headerRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(headerRowRaw);
+					headerRows.add(headerRow.toString());
+				}
+
+				List<String> childHeaderRows = new ArrayList<String>();
+				for (String childHeaderRowRaw : childHeaderRowsRaw) {
+					StringBuilder childHeaderRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(childHeaderRowRaw);
+					childHeaderRows.add(childHeaderRow.toString());
+				}
+
+//				Class<?> clazz = classObj.getClass();
+//				List<String> filterHeaderRows = new ArrayList<String>();
+//				for (Field field : clazz.getDeclaredFields()) {
+//					Element element = field.getAnnotation(Element.class);
+//					if (element != null && element.level().equals("parent") ) {
+//						filterHeaderRows.add(element.name());
+//					}
+//				}
+
+				for (int i= 5; i< rowCount; i++) {
+					// Create a JSONObject object to store row data.
+					
+					JSONObject rowJsonObjectChild = new JSONObject();
+					JSONObject rowJsonObject = new JSONObject();
+					String nodeName = StringPool.BLANK;
+					List<String> dataRow = dataTable.get(i);
+					
+					for (int j= 0; j < headerRows.size(); j++) {
+						String columnObjectKey = childHeaderRows.get(j);
+						String columnObjectValue = dataRow.get(j);
+						String columnKey = headerRows.get(j);
+						String columnValue = dataRow.get(j);
+						if (!columnKey.equals(StringPool.BLANK)) {
+							rowJsonObject.clear();
+							nodeName = headerRows.get(j);
+							rowJsonObjectChild.put(columnKey, columnValue);
+						}
+						if(!childHeaderRows.get(j).equals(StringPool.BLANK)){
+
+							rowJsonObject.put(columnObjectKey, columnObjectValue);
+							rowJsonObjectChild.put(nodeName, rowJsonObject);
+						}
+
+					}
+					tableJsonObject.put(title + " row "+i , rowJsonObjectChild);
+				}
+				ret = tableJsonObject.toString();
+			}
+		}
+		return ret;
+	}
+	
 }
