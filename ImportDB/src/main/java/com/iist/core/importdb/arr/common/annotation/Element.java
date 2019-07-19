@@ -7,13 +7,23 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Element {
-	String name() default "";
+	final int NUM_DEFAULT = 0; 
 
-	String level() default "";
+	final String STRING_DEFAULT = "";
 
-	String nameParent() default "";
+	String name() default STRING_DEFAULT;
 
-	String type() default "";
+	int level() default NUM_DEFAULT;
+
+	String nameParent() default STRING_DEFAULT;
+
+	String type() default STRING_DEFAULT;
+
+	int indexBeginHeader() default NUM_DEFAULT;
+
+	int indexEndHeader() default NUM_DEFAULT;
+
+	int headerIndexColumn() default NUM_DEFAULT;
 
 	
 }

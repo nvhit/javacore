@@ -3,7 +3,6 @@ package com.iist.core.importdb.excel.common.util;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -38,7 +37,6 @@ import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-
 import com.iist.core.importdb.excel.common.constants.StringPool;
 
 import net.sf.json.JSONObject;
@@ -46,13 +44,30 @@ import net.sf.json.JSONObject;
 /**
  * 
  * @author HungNV
+ * <p>
+ * This library use execute with excel file
+ * <p/>
+ *
+ * @author hungnv.iist@gmail.com
+ * @date 19/7/2019
+ * 
+ */
+/**
+ * @author computer
  *
  */
 public class ExcelUtils {
 	private static final char[] EXCEL_SHEET_NAME_INVALID_CHARS = { '/', '\\', '?', '*', ']', '[', ':' };
 	private static final char INVALID_REPLACE_CHAR = '_';
 	
-
+	/**
+	 * @param row
+	 * @param colIndex
+	 * @return
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static String getStringCellValue(Row row, int colIndex) {
 		String result = null;
 		if (row != null) {
@@ -68,6 +83,14 @@ public class ExcelUtils {
 		return result;
 	}
 
+	/**
+	 * @param row
+	 * @param colIndex
+	 * @return
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static double getNumericCellValue(Row row, int colIndex) {
 		double result = -1;
 		if (row != null) {
@@ -83,6 +106,15 @@ public class ExcelUtils {
 		return result;
 	}
 
+	/**
+	 * method get 1 row with index row
+	 * @param sheet
+	 * @param rowIndex
+	 * @return Row
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static Row getRow(Sheet sheet, int rowIndex) {
 		Row row = sheet.getRow(rowIndex);
 		if (row == null) {
@@ -91,6 +123,15 @@ public class ExcelUtils {
 		return row;
 	}
 
+	/**
+	 * method get cell with index row and index column
+	 * @param row
+	 * @param columnIndex
+	 * @return cell
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static Cell getCell(Row row, int columnIndex) {
 		Cell cell = row.getCell(columnIndex);
 		if (cell == null) {
@@ -99,6 +140,16 @@ public class ExcelUtils {
 		return cell;
 	}
 
+	/**
+	 * set value double for cell 
+	 * @param row
+	 * @param columnIndex
+	 * @param value
+	 * @return cell value double
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static Cell setCellValue(Row row, int columnIndex, double value) {
 		Cell cell = getCell(row, columnIndex);
 
@@ -107,23 +158,47 @@ public class ExcelUtils {
 		return cell;
 	}
 
+	/**
+	 * 
+	 * @param row
+	 * @param columnIndex
+	 * @param value
+	 * @return
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static Cell setCellValue(Row row, int columnIndex, String value) {
 		Cell cell = getCell(row, columnIndex);
 		try {
 			cell.setCellValue(value);
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
-			System.out.println(value);
 			cell.setCellValue(value.substring(0, 32767));
 
 		}
 		return cell;
 	}
 
+	/**
+	 * @param sheet
+	 * @param fromRow
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void removeRows(Sheet sheet, int fromRow) {
 		removeRows(sheet, fromRow, -1);
 	}
 
+	/**
+	 * @param sheet
+	 * @param fromRow
+	 * @param toRow
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void removeRows(Sheet sheet, int fromRow, int toRow) {
 
 		while (true) {
@@ -140,10 +215,25 @@ public class ExcelUtils {
 
 	}
 
+	/**
+	 * @param workbook
+	 * @param sheetName
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void moveToLast(Workbook workbook, String sheetName) {
 		workbook.setSheetOrder(sheetName, workbook.getNumberOfSheets() - 1);
 	}
 
+	/**
+	 * @param workbook
+	 * @param sheetName
+	 * @return
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static int removeSheet(Workbook workbook, String sheetName) {
 
 		int sheetIndex = workbook.getSheetIndex(sheetName);
@@ -155,14 +245,34 @@ public class ExcelUtils {
 		return sheetIndex;
 	}
 
+	/**
+	 * @param workbook
+	 * @param sheetName
+	 * @param pos
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void moveTo(Workbook workbook, String sheetName, int pos) {
 		workbook.setSheetOrder(sheetName, pos);
 	}
 
+	/**
+	 * @param rawSheetname
+	 * @return
+	 */
 	public static String getSheetNameWithLimit(String rawSheetname) {
 		return getSheetNameWithLimit(rawSheetname, false);
 	}
 
+	/**
+	 * @param rawSheetname
+	 * @param right
+	 * @return
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static String getSheetNameWithLimit(String rawSheetname, boolean right) {
 
 		String sheetname = right ? StringUtils.right(rawSheetname, 31) : StringUtils.left(rawSheetname, 31);
@@ -176,6 +286,14 @@ public class ExcelUtils {
 
 	}
 
+	/**
+	 * @param prefix
+	 * @param before
+	 * @return
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static String getSheetNameWithLimit(String prefix, String before) {
 		String result = before;
 
@@ -201,6 +319,17 @@ public class ExcelUtils {
 		addValidationData(sheet, listFormula, firstRow, lastRow, colIndex, colIndex);
 	}
 
+	/**
+	 * @param sheet
+	 * @param listFormula
+	 * @param firstRow
+	 * @param lastRow
+	 * @param firstCol
+	 * @param lastCol
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void addValidationData(Sheet sheet, String listFormula, int firstRow, int lastRow, int firstCol,
 			int lastCol) {
 
@@ -224,14 +353,34 @@ public class ExcelUtils {
 		sheet.addValidationData(validation);
 	}
 
+	/**
+	 * @param sheet
+	 * @param firstRow
+	 * @param lastRow
+	 * @param firstCol
+	 * @param lastCol
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void mergeCell(Sheet sheet, int firstRow, int lastRow, int firstCol, int lastCol) {
 		sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
 	}
 
+	/**
+	 * @param cellStyle
+	 */
 	public static void setThinBorder(CellStyle cellStyle) {
 		setBorder(cellStyle, BorderStyle.THIN);
 	}
 
+	/**
+	 * @param cellStyle
+	 * @param borderStyle
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void setBorder(CellStyle cellStyle, BorderStyle borderStyle) {
 
 		short borderColor = IndexedColors.BLACK.getIndex();
@@ -253,6 +402,17 @@ public class ExcelUtils {
 
 	}
 
+	/**
+	 * @param cellStyle
+	 * @param top
+	 * @param right
+	 * @param bottom
+	 * @param left
+	 * @param topColor
+	 * @param rightColor
+	 * @param bottomColor
+	 * @param leftColor
+	 */
 	public static void setBorder(CellStyle cellStyle, BorderStyle top, BorderStyle right, BorderStyle bottom,
 			BorderStyle left, short topColor, short rightColor, short bottomColor, short leftColor) {
 
@@ -268,18 +428,44 @@ public class ExcelUtils {
 
 	}
 
+	/**
+	 * @param cellStyle
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void setCellAlignmentTopCenter(CellStyle cellStyle) {
 		setCellAlignment(cellStyle, VerticalAlignment.TOP, HorizontalAlignment.CENTER);
 	}
 
+	/**
+	 * @param cellStyle
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void setCellAlignmentCenterLeft(CellStyle cellStyle) {
 		setCellAlignment(cellStyle, VerticalAlignment.CENTER, HorizontalAlignment.LEFT);
 	}
 
+	/**
+	 * @param cellStyle
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void setCellAlignmentCenter(CellStyle cellStyle) {
 		setCellAlignment(cellStyle, VerticalAlignment.CENTER, HorizontalAlignment.CENTER);
 	}
 
+	/**
+	 * @param cellStyle
+	 * @param verticalAlignment
+	 * @param horizontalAlignment
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void setCellAlignment(CellStyle cellStyle, VerticalAlignment verticalAlignment,
 			HorizontalAlignment horizontalAlignment) {
 
@@ -288,6 +474,13 @@ public class ExcelUtils {
 
 	}
 
+	/**
+	 * @param workbook
+	 * @param cellStyle
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void setHyperLinkStyle(Workbook workbook, CellStyle cellStyle) {
 
 		Font font = workbook.createFont();
@@ -298,6 +491,16 @@ public class ExcelUtils {
 
 	}
 
+	/**
+	 * @param workbook
+	 * @param row
+	 * @param columnIndex
+	 * @param cellContent
+	 * @param filePath
+	 * @author hungnv.iist@gmail.com
+	 * @date 19/7/2019
+	 * 
+	 */
 	public static void setHyperLinkToFile(Workbook workbook, Row row, int columnIndex, String cellContent,
 			String filePath) {
 
@@ -321,6 +524,17 @@ public class ExcelUtils {
 
 	}
 
+	/**
+	 * @param workbook
+	 * @param row
+	 * @param columnIndex
+	 * @param cellContent
+	 * @param linkToSheetName
+	 * @param linkToCellIndex
+	 *@author hungnv.iist@gmail.com
+	 *@date 19/7/2019
+	 * 
+	 */
 	public static void setHyperLinkToSheet(Workbook workbook, Row row, int columnIndex, String cellContent,
 			String linkToSheetName, String linkToCellIndex) {
 
@@ -352,6 +566,13 @@ public class ExcelUtils {
 		cell.setCellStyle(cellStyle);
 	}
 
+	/**
+	 * @param colName
+	 * @return
+	 *@author hungnv.iist@gmail.com
+	 *@date 19/7/2019
+	 * 
+	 */
 	public static int getColIndexByName(String colName) {
 		int index = 0;
 		String upper = colName.toUpperCase();
@@ -360,6 +581,14 @@ public class ExcelUtils {
 		return index;
 	}
 
+	/**
+	 * @param excelFilePath
+	 * @return
+	 * @throws IOException
+	 *@author hungnv.iist@gmail.com
+	 *@date 19/7/2019
+	 * 
+	 */
 	public static Workbook  getWorkbook(String excelFilePath) throws IOException {
 		Workbook workbook = null;
 		if (excelFilePath.endsWith("xlsx")) {
@@ -372,6 +601,13 @@ public class ExcelUtils {
 		return workbook;
 	}
 
+	/**
+	 * @param excelFilePath
+	 * @param beginRow
+	 *@author hungnv.iist@gmail.com
+	 *@date 19/7/2019
+	 * 
+	 */
 	public static  ArrayList<String> reading(String excelFilePath, int beginRow) {
 		Workbook workbook;
 		ArrayList<String> cells = new ArrayList<String>();
@@ -400,6 +636,15 @@ public class ExcelUtils {
 		
 	}
 
+	/**
+	 * @param excelFilePath
+	 * @param beginRow
+	 * @param endRow
+	 * @return
+	 *@author hungnv.iist@gmail.com
+	 *@date 19/7/2019
+	 * 
+	 */
 	public static  ArrayList<String> reading(String excelFilePath, int beginRow, int endRow) {
 		Workbook workbook;
 		ArrayList<String> cells = new ArrayList<String>();
@@ -428,6 +673,14 @@ public class ExcelUtils {
 		
 	}
 
+	/**
+	 * @param excelFilePath
+	 * @param oneRow
+	 * @return
+	 *@author hungnv.iist@gmail.com
+	 *@date 19/7/2019
+	 * 
+	 */
 	public static  ArrayList<String> readingOneRow(String excelFilePath, int oneRow) {
 		Workbook workbook;
 		ArrayList<String> cells = new ArrayList<String>();
@@ -454,40 +707,7 @@ public class ExcelUtils {
 		return cells;
 	}
 
-	/**
-	 *  create json file from excel
-	 * @param excelFilePath
-	 * @return sheetDataTable
-	 */
-	public static List<List<String>> creteJSONFileFromExcel(String excelFilePath, Object obj) {
-		List<List<String>> sheetDataTable = new ArrayList<List<String>>();
-		 try {
-			 Workbook excelWorkBook = getWorkbook(excelFilePath);
-			// Get all excel sheet count.
-			int totalSheetNumber = excelWorkBook.getNumberOfSheets();
-			for (int i = 0; i < totalSheetNumber; i++) {
-				// Get current sheet.
-				Sheet sheet = excelWorkBook.getSheetAt(i);
-
-				// Get sheet name.
-				String sheetName = sheet.getSheetName();
-				if(sheetName != null && sheetName.length() > 0) {
-					sheetDataTable = getSheetDataList(sheet);
-					// Generate JSON format of above sheet data and write to a JSON file.
-					String jsonString = getJSONStringFromList(sheetDataTable,obj);
-
-					String jsonFileName = sheet.getSheetName() + StringPool.PERIOD+"json";
-					writeStringToFile(jsonString, jsonFileName);
-				}
-			}
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		 return sheetDataTable;
-	}
+	
 
 	/**
 	 * write string to file 
@@ -525,7 +745,9 @@ public class ExcelUtils {
 	 * get JSON from list
 	 * @param dataTable
 	 * @return String
-	 * <p><p/>
+	*@author hungnv.iist@gmail.com
+	 *@date 19/7/2019
+	 * 
 	 */
 	public static String getJSONStringFromList(List<List<String>> dataTable) {
 		String ret = StringPool.BLANK;
@@ -535,13 +757,10 @@ public class ExcelUtils {
 				//Create a JSONObject to store table data.
 				JSONObject tableJsonObject = new JSONObject();
 				// The first row is the header row, store each column name.
-				String titleRaw = dataTable.get(0).get(0);
-				StringBuilder title = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(titleRaw);
 				List<String> headerRowsRaw = dataTable.get(2);
 				// The child header row
 				List<String> childHeaderRowsRaw = dataTable.get(3);
 
-				
 				List<String> headerRows = new ArrayList<String>();
 				for (String headerRowRaw : headerRowsRaw) {
 					StringBuilder headerRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(headerRowRaw);
@@ -583,7 +802,7 @@ public class ExcelUtils {
 						}
 					}
 
-					tableJsonObject.put(title + " row "+i , rowJsonObjectChild);
+					tableJsonObject.putAll(rowJsonObjectChild);
 				}
 				ret = tableJsonObject.toString();
 			}
@@ -595,10 +814,13 @@ public class ExcelUtils {
 	/**
 	 *  get data to sheet from list nest list
 	 * @param sheet
-	 * @return ret
+	 * @return lists
+	 * @author hungnv.iist@gmail.com
+	 *@date 19/7/2019
+	 * 
 	 */
 	public static List<List<String>> getSheetDataList(Sheet sheet) {
-		List<List<String>> ret = new ArrayList<List<String>>();
+		List<List<String>> lists = new ArrayList<List<String>>();
 		int firstRowNum = sheet.getFirstRowNum();
 		int lastRowNum = sheet.getLastRowNum();
 		if(lastRowNum > 0) {
@@ -643,80 +865,9 @@ public class ExcelUtils {
 						rowDataList.add(StringPool.BLANK);
 					}
 				}
-				ret.add(rowDataList);
+				lists.add(rowDataList);
 			}
 		}
-		return ret;
+		return lists;
 	}
-
-
-	public static String getJSONStringFromList(List<List<String>> dataTable, Object classObj) {
-		String ret = StringPool.BLANK;
-		if (dataTable != null) {
-			int rowCount = dataTable.size();
-			if (rowCount > 1) {
-				//Create a JSONObject to store table data.
-				JSONObject tableJsonObject = new JSONObject();
-				// The first row is the header row, store each column name.
-				String titleRaw = dataTable.get(0).get(0);
-				StringBuilder title = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(titleRaw);
-				List<String> headerRowsRaw = dataTable.get(2);
-				// The child header row
-				List<String> childHeaderRowsRaw = dataTable.get(3);
-
-				
-				List<String> headerRows = new ArrayList<String>();
-				for (String headerRowRaw : headerRowsRaw) {
-					StringBuilder headerRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(headerRowRaw);
-					headerRows.add(headerRow.toString());
-				}
-
-				List<String> childHeaderRows = new ArrayList<String>();
-				for (String childHeaderRowRaw : childHeaderRowsRaw) {
-					StringBuilder childHeaderRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(childHeaderRowRaw);
-					childHeaderRows.add(childHeaderRow.toString());
-				}
-
-//				Class<?> clazz = classObj.getClass();
-//				List<String> filterHeaderRows = new ArrayList<String>();
-//				for (Field field : clazz.getDeclaredFields()) {
-//					Element element = field.getAnnotation(Element.class);
-//					if (element != null && element.level().equals("parent") ) {
-//						filterHeaderRows.add(element.name());
-//					}
-//				}
-
-				for (int i= 5; i< rowCount; i++) {
-					// Create a JSONObject object to store row data.
-					
-					JSONObject rowJsonObjectChild = new JSONObject();
-					JSONObject rowJsonObject = new JSONObject();
-					String nodeName = StringPool.BLANK;
-					List<String> dataRow = dataTable.get(i);
-					
-					for (int j= 0; j < headerRows.size(); j++) {
-						String columnObjectKey = childHeaderRows.get(j);
-						String columnObjectValue = dataRow.get(j);
-						String columnKey = headerRows.get(j);
-						String columnValue = dataRow.get(j);
-						if (!columnKey.equals(StringPool.BLANK)) {
-							rowJsonObject.clear();
-							nodeName = headerRows.get(j);
-							rowJsonObjectChild.put(columnKey, columnValue);
-						}
-						if(!childHeaderRows.get(j).equals(StringPool.BLANK)){
-
-							rowJsonObject.put(columnObjectKey, columnObjectValue);
-							rowJsonObjectChild.put(nodeName, rowJsonObject);
-						}
-
-					}
-					tableJsonObject.put(title + " row "+i , rowJsonObjectChild);
-				}
-				ret = tableJsonObject.toString();
-			}
-		}
-		return ret;
-	}
-	
 }

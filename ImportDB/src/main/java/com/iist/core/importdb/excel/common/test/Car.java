@@ -14,13 +14,12 @@ public class Car {
 	
 	public static class Hung {
 		@JsonProperty
-		public String a ;
+		public String maSoNhanVien ;
 		@JsonProperty
-		public String b;
-		@Override
-		public String toString() {
-			return "Hung [a=" + a + ", b=" + b + "]";
-		}
+		public String hoVaTen;
+		@JsonProperty
+		public String ghiChu;
+		
 		
 		
 	}

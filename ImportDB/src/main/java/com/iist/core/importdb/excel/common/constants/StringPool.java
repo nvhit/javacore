@@ -1,6 +1,8 @@
 package com.iist.core.importdb.excel.common.constants;
 public class StringPool {
 
+	public static final String SUFFIX_JSON = "json";
+
 	public static final String AMPERSAND = "&";
 
 	public static final String AMPERSAND_ENCODED = "&amp;";
