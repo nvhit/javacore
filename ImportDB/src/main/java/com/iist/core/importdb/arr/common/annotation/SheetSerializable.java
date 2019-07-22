@@ -8,5 +8,14 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface SheetSerializable {
-	String sheetName() default "";
+	final String STRING_DEFAUL ="";
+	final int NUM_DEFAULT = 0;
+
+	String sheetName() default STRING_DEFAUL;
+	
+	int indexBeginHeader() default NUM_DEFAULT;
+
+	int headerIndexColumn() default NUM_DEFAULT;
+
+	int indexBeginRowData() default NUM_DEFAULT;
 }

@@ -3,11 +3,15 @@ package com.iist.core.importdb.excel.common.util;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.common.usermodel.HyperlinkType;
@@ -37,9 +41,9 @@ import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.iist.core.importdb.arr.common.annotation.Element;
+import com.iist.core.importdb.arr.common.annotation.SheetSerializable;
 import com.iist.core.importdb.excel.common.constants.StringPool;
-
-import net.sf.json.JSONObject;
 
 /**
  * 
@@ -122,6 +126,51 @@ public class ExcelUtils {
 		}
 		return row;
 	}
+/**
+ * 
+ * @param excelFilePath
+ * @param obj
+ * @return
+ */
+	public static List<String> getRow(String excelFilePath, Object obj) {
+		int indexBeginHeader = 0;
+		List<String> rows = new ArrayList<String>();
+		Class<?> clazz = obj.getClass();
+		SheetSerializable sheetSerializable = clazz.getDeclaredAnnotation(SheetSerializable.class);
+		indexBeginHeader = sheetSerializable.indexBeginHeader();
+		rows = getListToExcel(excelFilePath, obj).get(indexBeginHeader);
+		return rows;
+	}
+
+	/**
+	 * 
+	 * @param excelFilePath
+	 * @param obj
+	 * @return
+	 */
+	public static List<List<String>> getListToExcel(String excelFilePath, Object obj) {
+		List<List<String>> sheetDataTable = new ArrayList<List<String>>();
+		 try {
+			 Workbook excelWorkBook = getWorkbook(excelFilePath);
+			// Get all excel sheet count.
+			int totalSheetNumber = excelWorkBook.getNumberOfSheets();
+			for (int i = 0; i < totalSheetNumber; i++) {
+				// Get current sheet.
+				Sheet sheet = excelWorkBook.getSheetAt(i);
+				// Get sheet name.
+				String sheetName = sheet.getSheetName();
+				if((!sheetName.equals(null)) && sheetName.length() > 0) {
+					sheetDataTable = getSheetDataList(sheet);
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		 return sheetDataTable;
+	}
+
 
 	/**
 	 * method get cell with index row and index column
@@ -568,7 +617,7 @@ public class ExcelUtils {
 
 	/**
 	 * @param colName
-	 * @return
+	 * @return number column
 	 *@author hungnv.iist@gmail.com
 	 *@date 19/7/2019
 	 * 
@@ -583,7 +632,7 @@ public class ExcelUtils {
 
 	/**
 	 * @param excelFilePath
-	 * @return
+	 * @return workbook
 	 * @throws IOException
 	 *@author hungnv.iist@gmail.com
 	 *@date 19/7/2019
@@ -602,8 +651,10 @@ public class ExcelUtils {
 	}
 
 	/**
+	 * reading file excel with begin row
 	 * @param excelFilePath
 	 * @param beginRow
+	 * @return list 
 	 *@author hungnv.iist@gmail.com
 	 *@date 19/7/2019
 	 * 
@@ -637,10 +688,11 @@ public class ExcelUtils {
 	}
 
 	/**
+	 * reading file excel with row limit
 	 * @param excelFilePath
 	 * @param beginRow
 	 * @param endRow
-	 * @return
+	 * @return list
 	 *@author hungnv.iist@gmail.com
 	 *@date 19/7/2019
 	 * 
@@ -674,9 +726,10 @@ public class ExcelUtils {
 	}
 
 	/**
+	 * reading one row in file excel
 	 * @param excelFilePath
 	 * @param oneRow
-	 * @return
+	 * @return list 
 	 *@author hungnv.iist@gmail.com
 	 *@date 19/7/2019
 	 * 
@@ -707,8 +760,6 @@ public class ExcelUtils {
 		return cells;
 	}
 
-	
-
 	/**
 	 * write string to file 
 	 * @param data
@@ -716,100 +767,21 @@ public class ExcelUtils {
 	 */
 	public static void writeStringToFile (String data, String fileName) {
 		try {
-
 			// Get the output file absolute path.
 			String filePath = com.iist.core.importdb.excel.common.util.StringUtils.getPathOutput()+fileName;
-
 			// Create File, FileWriter and BufferedWriter object.
 			File file = new File(filePath);
-
 			FileWriter fw = new FileWriter(file);
-
 			BufferedWriter buffWriter = new BufferedWriter(fw);
-
 			// Write string data to the output file, flush and close the buffered writer object.
 			buffWriter.write(data);
-
 			buffWriter.flush();
-
 			buffWriter.close();
-
 			System.out.println(filePath + " has been created.");
-
 		}catch (IOException ex) {
 			System.err.println(ex.getMessage());
 		}
 	}
-
-	/**
-	 * get JSON from list
-	 * @param dataTable
-	 * @return String
-	*@author hungnv.iist@gmail.com
-	 *@date 19/7/2019
-	 * 
-	 */
-	public static String getJSONStringFromList(List<List<String>> dataTable) {
-		String ret = StringPool.BLANK;
-		if (dataTable != null) {
-			int rowCount = dataTable.size();
-			if (rowCount > 1) {
-				//Create a JSONObject to store table data.
-				JSONObject tableJsonObject = new JSONObject();
-				// The first row is the header row, store each column name.
-				List<String> headerRowsRaw = dataTable.get(2);
-				// The child header row
-				List<String> childHeaderRowsRaw = dataTable.get(3);
-
-				List<String> headerRows = new ArrayList<String>();
-				for (String headerRowRaw : headerRowsRaw) {
-					StringBuilder headerRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(headerRowRaw);
-					headerRows.add(headerRow.toString());
-				}
-
-				List<String> childHeaderRows = new ArrayList<String>();
-				for (String childHeaderRowRaw : childHeaderRowsRaw) {
-					StringBuilder childHeaderRow = com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(childHeaderRowRaw);
-					childHeaderRows.add(childHeaderRow.toString());
-				}
-
-				// Loop in the row data list.
-				for (int i= 5; i< rowCount; i++) {
-					// Create a JSONObject object to store row data.
-					
-					JSONObject rowJsonObjectChild = new JSONObject();
-					JSONObject rowJsonObject = new JSONObject();
-					String nodeName = StringPool.BLANK;
-					List<String> dataRow = dataTable.get(i);
-					
-					for (int j= 0; j < headerRows.size(); j++) {
-						
-						String columnKey = headerRows.get(j);
-						String columnValue = dataRow.get(j);
-
-						String columnObjectKey = childHeaderRows.get(j);
-						String columnObjectValue = dataRow.get(j);
-						if (!columnKey.equals(StringPool.BLANK)) {
-							rowJsonObject.clear();
-							nodeName = headerRows.get(j);
-							rowJsonObjectChild.put(columnKey, columnValue);
-						}
-
-						if(!childHeaderRows.get(j).equals(StringPool.BLANK)){
-							
-							rowJsonObject.put(columnObjectKey, columnObjectValue);
-							rowJsonObjectChild.put(nodeName, rowJsonObject);
-						}
-					}
-
-					tableJsonObject.putAll(rowJsonObjectChild);
-				}
-				ret = tableJsonObject.toString();
-			}
-		}
-		return ret;
-	}
-
 
 	/**
 	 *  get data to sheet from list nest list
@@ -824,7 +796,7 @@ public class ExcelUtils {
 		int firstRowNum = sheet.getFirstRowNum();
 		int lastRowNum = sheet.getLastRowNum();
 		if(lastRowNum > 0) {
-			for(int i= firstRowNum; i< lastRowNum + 1; i++) {
+			for(int i= firstRowNum; i< lastRowNum+ 1; i++) {
 				// Get current row object.
 				Row row = sheet.getRow(i);
 				// Get first and last cell number.
@@ -842,7 +814,7 @@ public class ExcelUtils {
 					// Get cell type.
 					CellType cellType = cell.getCellType();
 
-					if (cellType == CellType.NUMERIC) {
+					if (cellType.equals(CellType.NUMERIC)) {
 						if (HSSFDateUtil.isCellDateFormatted(cell)) {
 							String stringCellValue = cell.toString();
 							rowDataList.add(stringCellValue);
@@ -851,17 +823,14 @@ public class ExcelUtils {
 							String stringCellValue = BigDecimal.valueOf(numberValue).toPlainString();
 							rowDataList.add(stringCellValue);
 						}
-
-					} else if (cellType == CellType.STRING) {
+					} else if (cellType.equals(CellType.STRING) ) {
 						String cellValue = cell.getStringCellValue();
 						rowDataList.add(cellValue);
-					} else if (cellType == CellType.BOOLEAN) {
+					} else if (cellType.equals(CellType.BOOLEAN)) {
 						boolean numberValue = cell.getBooleanCellValue();
 						String stringCellValue = String.valueOf(numberValue);
-
 						rowDataList.add(stringCellValue);
-
-					} else if (cellType == CellType.BLANK) {
+					} else if (cellType.equals(CellType.BLANK)) {
 						rowDataList.add(StringPool.BLANK);
 					}
 				}
@@ -869,5 +838,80 @@ public class ExcelUtils {
 			}
 		}
 		return lists;
+	}
+
+	public static boolean validateDataExcel(String pathFileExcel, Object obj) {
+		boolean status = true;
+
+		Class<?> clazz = obj.getClass();
+		SheetSerializable sheetSerializable = clazz.getDeclaredAnnotation(SheetSerializable.class);
+		String prmSheetName = ExcelUtils.getSheetNameWithLimit(sheetSerializable.sheetName().trim());
+		int indexBeginRowData = sheetSerializable.indexBeginRowData();
+		int headerIndexColumn = sheetSerializable.headerIndexColumn();
+		Map<String, String> mapCellsValue = new HashMap<String, String>();
+
+		List<String> rowHeaders = new ArrayList<String>();
+		for (String rawString : ExcelUtils. getRow(pathFileExcel, obj)) {
+			rowHeaders.add(com.iist.core.importdb.excel.common.util.StringUtils.convertStringToVar(rawString).toString());
+			
+		}
+
+		for (Field field : clazz.getDeclaredFields()) {
+			Element element = field.getAnnotation(Element.class);
+			if (!element.equals(null)) {
+				mapCellsValue.put(element.name(), element.type());
+			}
+		}
+		System.out.println(mapCellsValue);
+
+		
+		try {
+			Workbook excelWorkBook = getWorkbook(pathFileExcel);
+			// Get all excel sheet count.
+			int totalSheetNumber = excelWorkBook.getNumberOfSheets();
+			for (int i = 0; i < totalSheetNumber; i++) {
+				// Get current sheet.
+				Sheet sheet = excelWorkBook.getSheetAt(i);
+				// Get sheet name.
+				String sheetName = ExcelUtils.getSheetNameWithLimit(sheet.getSheetName().trim());
+				if((!sheetName.equals(null)) && sheetName.length() > 0 && sheetName.equals(prmSheetName)) {
+					int lastRowNum = sheet.getLastRowNum();
+					if(lastRowNum > 0) {
+						for(int j= indexBeginRowData; j< lastRowNum+ 1; j++) {
+							// Get current row object.
+							Row row = sheet.getRow(j);
+							// Get first and last cell number.
+							int firstCellNum = headerIndexColumn;
+							int lastCellNum = row.getLastCellNum();
+
+							// Loop in the row cells.
+							for (int k = firstCellNum; k < lastCellNum; k++) {
+								// Get current cell.
+								Cell cell = row.getCell(k);
+
+								
+								for ( String key : mapCellsValue.keySet() ) {
+									for (String rowa : rowHeaders) {
+										if (key.equals(rowa)) {
+											CellType cellType = cell.getCellType();
+											if (cellType.equals(CellType.STRING)) {
+												if(!mapCellsValue.get(key).equals("String")) {
+													System.err.println("Error format cell String at: "+ cell.getColumnIndex()+":"+ cell.getRowIndex());
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return status;
 	}
 }

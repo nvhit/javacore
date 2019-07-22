@@ -12,9 +12,5 @@ public class HopDongLaoDong {
 	@Element(type="String", name ="soHopDong")
 	private String soHopDong;
 
-	
-	
-	
-	
 }
 

@@ -19,11 +19,4 @@ public @interface Element {
 
 	String type() default STRING_DEFAULT;
 
-	int indexBeginHeader() default NUM_DEFAULT;
-
-	int indexEndHeader() default NUM_DEFAULT;
-
-	int headerIndexColumn() default NUM_DEFAULT;
-
-	
 }
